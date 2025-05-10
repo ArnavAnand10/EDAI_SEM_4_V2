@@ -82,47 +82,92 @@ async def detect_forgery(file: UploadFile = File(...)):
         raise HTTPException(
             status_code=500, detail=f"An error occurred during processing: {str(e)}"
         )
+from PIL import Image
+import io
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import StreamingResponse
+import cv2
+import numpy as np
+import io
+import imghdr  # For image type detection
+
+app = FastAPI()
+
+def embed_metadata_in_image(img):
+    # Assuming this function exists elsewhere in your code
+    # and returns a processed image and metadata
+    metadata = {"embedded": True}
+    return img, metadata
+
 @app.post("/embed")
 async def embed_image(image: UploadFile = File(...)):
-    if not image.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="File must be an image")
-
     try:
-        # Read the image data
+        # 1. Read input file
         image_data = await image.read()
-        
         if not image_data:
-            raise HTTPException(status_code=400, detail="Empty file uploaded")
-
-        # Convert to numpy array and decode
-        nparr = np.frombuffer(image_data, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            raise HTTPException(status_code=400, detail="Empty file")
         
-        if img is None:
-            raise HTTPException(status_code=400, detail="Invalid or unsupported image format")
-
-        # Process the image and embed metadata
-        processed_image, metadata = embed_metadata_in_image(img)
-
-        # Convert the processed image back to bytes
-        success, encoded_image = cv2.imencode('.png', processed_image)
+        # 2. Detect image format for debugging
+        image_format = imghdr.what(None, h=image_data)
+        if not image_format:
+            raise HTTPException(status_code=400, detail="Could not identify image format")
+        
+        # 3. Create a file-like object for OpenCV
+        image_stream = io.BytesIO(image_data)
+        image_stream.seek(0)
+        
+        # 4. Alternative approach using PIL first to ensure format compatibility
+        from PIL import Image
+        try:
+            pil_image = Image.open(image_stream)
+            pil_image.verify()  # Verify the file is a valid image
+            image_stream.seek(0)  # Reset stream position
+            pil_image = Image.open(image_stream)  # Reopen (verify closes the file)
+            
+            # Convert PIL image to numpy array for OpenCV
+            img = np.array(pil_image.convert('RGB'))
+            
+            # Convert BGR for OpenCV if needed
+            if img.shape[2] == 3:  # Check if it's a 3-channel image
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        except Exception as pil_error:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid image format: {str(pil_error)}, detected format: {image_format}"
+            )
+        
+        # 5. Ensure proper numeric range
+        img = np.clip(img, 0, 255).astype(np.uint8)
+        
+        # 6. Process with error handling
+        processed_img, metadata = embed_metadata_in_image(img)
+        processed_img = np.clip(processed_img, 0, 255).astype(np.uint8)
+        
+        # 7. Encode and return
+        success, encoded_img = cv2.imencode('.png', processed_img)
         if not success:
             raise HTTPException(status_code=500, detail="Failed to encode processed image")
-
+            
         return StreamingResponse(
-            io.BytesIO(encoded_image.tobytes()),
-            media_type="image/png",  # Always return as PNG
-            headers={
-                "Content-Disposition": f"attachment; filename=embedded_{image.filename}",
-                "X-Metadata-UUID": metadata["uuid"],
-                "X-Metadata-Timestamp": str(metadata["timestamp"]),
-            },
+            io.BytesIO(encoded_img.tobytes()),
+            media_type="image/png",
+            headers={"X-Metadata": str(metadata)}
         )
-    except HTTPException:
-        raise  # Re-raise HTTPException as-is
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
-    
+        # More detailed error reporting
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error processing image: {error_details}")
+        
+        # Try to provide more specific error info about the file
+        file_info = f"File format detection: {imghdr.what(None, h=image_data) if 'image_data' in locals() else 'unknown'}"
+        print(file_info)
+        
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Processing failed: {str(e)}. {file_info}"
+        )
 
 @app.post("/verify", response_model=VerificationResult)
 async def verify_image(image: UploadFile = File(...)):
