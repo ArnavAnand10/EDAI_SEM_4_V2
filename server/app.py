@@ -82,30 +82,47 @@ async def detect_forgery(file: UploadFile = File(...)):
         raise HTTPException(
             status_code=500, detail=f"An error occurred during processing: {str(e)}"
         )
-
-
 @app.post("/embed")
 async def embed_image(image: UploadFile = File(...)):
     if not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
 
     try:
+        # Read the image data
         image_data = await image.read()
+        
+        if not image_data:
+            raise HTTPException(status_code=400, detail="Empty file uploaded")
 
-        processed_image, metadata = embed_metadata_in_image(image_data)
+        # Convert to numpy array and decode
+        nparr = np.frombuffer(image_data, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if img is None:
+            raise HTTPException(status_code=400, detail="Invalid or unsupported image format")
+
+        # Process the image and embed metadata
+        processed_image, metadata = embed_metadata_in_image(img)
+
+        # Convert the processed image back to bytes
+        success, encoded_image = cv2.imencode('.png', processed_image)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to encode processed image")
 
         return StreamingResponse(
-            io.BytesIO(processed_image),
-            media_type=image.content_type,
+            io.BytesIO(encoded_image.tobytes()),
+            media_type="image/png",  # Always return as PNG
             headers={
                 "Content-Disposition": f"attachment; filename=embedded_{image.filename}",
                 "X-Metadata-UUID": metadata["uuid"],
                 "X-Metadata-Timestamp": str(metadata["timestamp"]),
             },
         )
+    except HTTPException:
+        raise  # Re-raise HTTPException as-is
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
-
+    
 
 @app.post("/verify", response_model=VerificationResult)
 async def verify_image(image: UploadFile = File(...)):
