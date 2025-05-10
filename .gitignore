@@ -37,4 +37,47 @@ Thumbs.db
 # Common dotenv
 .env
 
-/env
+/env# Node modules and build artifacts
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.next/
+/frontend/.env.local
+
+# Python caches and virtual environments
+/Backend/__pycache__/
+/Backend/env/
+/Backend/*.pyc
+/Backend/.env
+/Backend/.venv/
+/Backend/venv/
+/Backend/.pytest_cache/
+/Backend/.mypy_cache/
+
+/server/__pycache__/
+/server/*.pyc
+/server/.env
+/server/.venv/
+/server/venv/
+/server/.pytest_cache/
+/server/.mypy_cache/
+
+# Global Python ignores
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+
+# OS and IDE-specific
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Common dotenv
+.env
+
+/envcasia-dataset
+dataset
+weights
+__pycache__
+*.pt
