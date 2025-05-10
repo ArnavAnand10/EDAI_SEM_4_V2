@@ -4,6 +4,7 @@
 /frontend/.next/
 /frontend/.env.local
 
+/env
 # Python caches and virtual environments
 /Backend/__pycache__/
 /Backend/env/
