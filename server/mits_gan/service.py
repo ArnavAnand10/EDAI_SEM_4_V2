@@ -45,11 +45,10 @@ def embed_metadata_in_image(image_data: bytes) -> tuple[bytes, dict]:
     length_binary = format(metadata_length, "032b")
 
     for i in range(32):
-        if i < len(length_binary):
-            if len(img_array.shape) == 3:
-                flat_img[i, 2] = (flat_img[i, 2] & ~1) | int(length_binary[i])
-            else:
-                flat_img[i] = (flat_img[i] & ~1) | int(length_binary[i])
+        if len(img_array.shape) == 3:
+            flat_img[i, 2] = (flat_img[i, 2] & 0xFE) | int(length_binary[i])
+        else:
+            flat_img[i] = (flat_img[i] & 0xFE) | int(length_binary[i])
 
     for i in range(len(metadata_binary)):
         pixel_position = i + 32
@@ -57,13 +56,9 @@ def embed_metadata_in_image(image_data: bytes) -> tuple[bytes, dict]:
             break
 
         if len(img_array.shape) == 3:
-            flat_img[pixel_position, 2] = (flat_img[pixel_position, 2] & ~1) | int(
-                metadata_binary[i]
-            )
+            flat_img[pixel_position, 2] = (flat_img[pixel_position, 2] & 0xFE) | int(metadata_binary[i])
         else:
-            flat_img[pixel_position] = (flat_img[pixel_position] & ~1) | int(
-                metadata_binary[i]
-            )
+            flat_img[pixel_position] = (flat_img[pixel_position] & 0xFE) | int(metadata_binary[i])
 
     if len(img_array.shape) == 3:
         new_img_array = flat_img.reshape(img_array.shape)
