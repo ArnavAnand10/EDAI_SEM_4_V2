@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 import numpy as np
@@ -15,7 +16,11 @@ from mits_gan.service import (
     preprocess_image,
     load_model,
 )
-
+from btd.services import (
+    MODALITY_CONFIG,
+    preprocess_image,
+    detect_anomaly,
+)
 app = FastAPI(
     title="Image Forgery Detection API",
     description="API to detect if an image is authentic or forged",
@@ -29,6 +34,14 @@ class VerificationResult(BaseModel):
     original_metadata: dict
     is_intact: bool
     message: str
+
+
+class PredictionResponse(BaseModel):
+    is_fake: bool
+    confidence: float
+    anomaly_score: float
+    modality: str
+    message: Optional[str] = None
 
 
 @app.on_event("startup")
@@ -194,6 +207,49 @@ async def verify_image(image: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error verifying image: {str(e)}")
 
-if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=8080, reload=True)
 
+@app.post("/predict", response_model=PredictionResponse)
+async def predict_deepfake(
+    file: UploadFile = File(...),
+    modality: str = "MRI", 
+    x: int = 256,
+    y: int = 256
+):
+    """Endpoint for medical deepfake detection using diffusion model"""
+    try:
+        # Validate input
+        if modality not in MODALITY_CONFIG:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported modality. Must be one of: {list(MODALITY_CONFIG.keys())}"
+            )
+        if modality not in ['CT', 'MRI']:
+            raise HTTPException(status_code=400, detail="Modality must be either 'CT' or 'MRI'")
+        
+        # Read file content
+        contents = await file.read()
+        
+        # Preprocess based on modality
+        patch_size = 96 if modality == 'CT' else 128
+        input_tensor = preprocess_image(contents, modality, patch_size, x, y)
+        
+        # Run detection
+        is_fake, confidence, anomaly_score = detect_anomaly(input_tensor)
+        
+        return {
+            "is_fake": bool(is_fake),
+            "confidence": float(confidence),
+            "anomaly_score": float(anomaly_score),
+            "modality": modality,
+            "message": "Prediction successful"
+        }
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+
+
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
