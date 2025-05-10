@@ -1,4 +1,3 @@
-// src/components/Sidebar.jsx
 import { Link, useLocation } from 'react-router-dom';
 
 const Sidebar = () => {
@@ -9,6 +8,7 @@ const Sidebar = () => {
     { name: 'Patients', path: '/dashboard/patients', icon: '📈' },
     { name: 'Community', path: '/dashboard/forum', icon: '👥' },
     { name: 'Analyze Report', path: '/dashboard/analyze-report', icon: '🔍' },
+    { name: 'Generate Tamper-Proof Report', path: '/dashboard/secure-report', icon: '📄🔒' }, // New Card Link
   ];
 
   return (

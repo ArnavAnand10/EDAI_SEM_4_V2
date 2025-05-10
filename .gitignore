@@ -1,44 +1,40 @@
-    # --- Python ---
-# Virtual environment
-env/
-venv/
-.venv/
+# Node modules and build artifacts
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.next/
+/frontend/.env.local
 
-# Byte-compiled / cached / generated files
-__pycache__/
-*.py[cod]
+# Python caches and virtual environments
+/Backend/__pycache__/
+/Backend/env/
+/Backend/*.pyc
+/Backend/.env
+/Backend/.venv/
+/Backend/venv/
+/Backend/.pytest_cache/
+/Backend/.mypy_cache/
+
+/server/__pycache__/
+/server/*.pyc
+/server/.env
+/server/.venv/
+/server/venv/
+/server/.pytest_cache/
+/server/.mypy_cache/
+
+# Global Python ignores
 *.pyc
-*.pyd
 *.pyo
+*.pyd
+*.sqlite3
+*.log
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.coverage
-.pytest_cache/
-
-# FastAPI-specific
-*.sqlite
-*.db
-
-# Environment variables
-.env
-.env.local
-.env.*.local
-
-# --- Frontend (if applicable) ---
-frontend/node_modules/
-frontend/dist/
-frontend/.next/
-frontend/.cache/
-
-# --- General ---
-# OS/Editor files
+# OS and IDE-specific
 .DS_Store
-.idea/
+Thumbs.db
 .vscode/
-*.swp
-*.swo
+
+# Common dotenv
+.env
+
+/env

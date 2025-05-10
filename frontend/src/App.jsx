@@ -8,6 +8,7 @@ import Forum from "./pages/Dashboard/Forum";
 import AnalyzeReport from "./pages/Dashboard/AnalyzeReport";
 import ReportView from "./pages/Dashboard/ReportView";
 import PatientProgressTracking from "./pages/Dashboard/Patient";
+import SecureReportPage from "./pages/Dashboard/secureImage";
 
 
 function App() {
@@ -21,7 +22,8 @@ function App() {
         <Route path="/dashboard/forum" element={<Forum  />} />
         <Route path="/dashboard/reports/:reportId" element={<ReportView  />} />
 
- 
+        <Route path="/dashboard/secure-image" element={<SecureReportPage />} />
+
         <Route path="/dashboard/analyze-report" element={<AnalyzeReport />} />
         <Route path="/" element={<Login />} />
       </Routes>
