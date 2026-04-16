@@ -10,7 +10,7 @@ import re  # For JSON extraction if needed
 router = APIRouter(prefix="/progress", tags=["Progress"])
 
 # Configure Gemini
-genai.configure(api_key="AIzaSyC_B4ybRuHtbbF9qAneIvBjCawpZOUS1cw")
+genai.configure(api_key="")
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 def extract_json_from_response(text: str) -> dict:
