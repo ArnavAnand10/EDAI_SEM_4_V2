@@ -45,7 +45,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-uri = "mongodb+srv://arnavanand710:anand@cluster0.ikgfxgh.mongodb.net/?appName=Cluster0"
+uri = ""
 
 
 
