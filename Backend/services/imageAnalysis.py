@@ -1,6 +1,6 @@
 from groq import Groq
 
-client = Groq(api_key="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")
+client = Groq(api_key="")
 
 def analyze_medical_image(image_url: str) -> str:
     print("doing image analysis",image_url)
